@@ -70,4 +70,4 @@ the simplified markup language we are using in this file and any other file endi
 Markdown is the official documentation format on GitHub and many other platforms, and is
 a valuable Markup for you to learn and practice.
 
-As an example, look at this page introducing [your instructor](Paul.md).
+As an example, look at this page introducing [your instructor](https://github.com/TheEvergreenStateCollege/dgp-25au/blob/main/activities/week-01/Paul.md).

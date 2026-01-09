@@ -1,6 +1,6 @@
 # Week 01a
 
-2026-01-06 Monday
+2026-01-06 Tuesday
 
 ## First Half
 Welcome! This is a class for folks who enjoy both games and programming, and want to combine them.
@@ -33,8 +33,6 @@ Remember your experiences later, as this is your first *pair programming* experi
 
 ## Second Half
 
-### Introduction Activity
+Continue SoftwareSetup.
 
-Start thinking of a game you enjoy (either one that you're playing, or that you played in the past).
-
-[Read this document and follow instructions.](../activities/week-01/Introduction.md)
+End with running a match `examplefuncsplayer` vs. itself.
