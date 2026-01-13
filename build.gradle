@@ -66,6 +66,7 @@ ext.versions = [
   battlecodeClient: new File(projectDir, "client_version.txt").text.trim()
 ]
 
+ext.python = System.properties['os.name'].toLowerCase().contains('windows') ? 'python' : 'python3'
 ext.pythonScript = new File(projectDir, "run.py")
 ext.botDirectory = new File(projectDir, "src")
 
@@ -152,7 +153,7 @@ task update {
 task installPyLocal(type: Exec) {
   description 'Updates configurations to use an already downloaded version of the Python engine.'
   group 'battlecode'
-  commandLine 'python', pythonScript.absolutePath, 'install_current_version',
+  commandLine python, pythonScript.absolutePath, 'install_current_version',
     '--on-saturn', (project.findProperty("onSaturn") ?: "false").toString(),
     '--force-reinstall', (project.findProperty("forceReinstallPy") ?: "false").toString()
 }
@@ -275,17 +276,13 @@ task verify(type: JavaExec) {
 
 //////// Running ////////
 
-task downloadPyPackage {
+task downloadPyPackage(type: Exec) {
   description 'Downloads Python dependencies for running matches.'
   group 'battlecode'
-  doLast {
-    exec {
-      commandLine 'python', pythonScript.absolutePath, 'update',
+  commandLine python, pythonScript.absolutePath, 'update',
         '--on-saturn', (project.findProperty("onSaturn") ?: "false").toString(),
         '--debug', (project.findProperty("debug") ?: "false").toString(),
         '--force-reinstall', (project.findProperty("forceReinstallPy") ?: "false").toString()
-    }
-  }
 }
 
 def truncateString(String input, int maxLength) {
@@ -335,7 +332,7 @@ task runJavaLocal(type: JavaExec) {
 task runJava(dependsOn: runJavaLocal) {}
 
 task runPyLocal(type: Exec, dependsOn: installPyLocal) {
-  commandLine 'python', '-m', 'battlecode26',
+  commandLine python, '-m', 'battlecode26',
     '--teamA', project.findProperty('languageA') == 'python' ? project.property('teamA') : '/',
     '--teamB', project.findProperty('languageB') == 'python' ? project.property('teamB') : '/',
     '--dirA', botDirectory.absolutePath,
@@ -343,20 +340,9 @@ task runPyLocal(type: Exec, dependsOn: installPyLocal) {
     '--new-process'
 }
 
-// task runPyDebug(type: Exec) {
-//   // same as runPy but with --debug and without --new-process
-//   mustRunAfter downloadPyPackage
-//   commandLine 'python', '-m', 'battlecode26',
-//     '--teamA', project.findProperty('languageA') == 'python' ? project.property('teamA') : '/',
-//     '--teamB', project.findProperty('languageB') == 'python' ? project.property('teamB') : '/',
-//     '--dirA', 'src',
-//     '--dirB', 'src',
-//     '--debug'
-// }
-
 task runPy(type: Exec) {
   mustRunAfter downloadPyPackage
-  commandLine 'python', '-m', 'battlecode26',
+  commandLine python, '-m', 'battlecode26',
     '--teamA', project.findProperty('languageA') == 'python' ? project.property('teamA') : '/',
     '--teamB', project.findProperty('languageB') == 'python' ? project.property('teamB') : '/',
     '--dirA', botDirectory.absolutePath,
