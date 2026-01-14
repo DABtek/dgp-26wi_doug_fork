@@ -9,26 +9,16 @@ Review:
 * [Homework 01 released](), due in one week (Thursday, Jan 15) 
 * [Syllabus](), and evaluation sentences
 
-### The Need for Git (In-Class Activity)
 
-The situation: last time, we had a driver (Gabriel) who worked on some code, that now we wish to share with the rest of the class.
-
-This will occur for all of you when you are working with your teammates, developing your own Battlecode player, or in the future when doing in-class activities.
-
-* What are some ways that you already know how to do this? (Assume you don't know Git)
-
-We are now going to share code by using ZIP files. In pairs, using whatever means you know how to do or can look up with Google, create a ZIP file of your cloned `dgp-26wi` directory. Message
-
-* What are some advantages of ZIP files?
 
 ### Java Review
 
-### Java Class Structure
+#### Java Class Structure
 
 What is a Java program?
 
 (Single-Threaded Version, which is How Each Battlecode Bot is Run)
-A collection of classes, with methods (functions) that are run, in order, from start to finish, unless 
+A collection of classes, with methods (functions) that are run, in order, from start to finish, unless.
 
 Like a karaoke song, program execution steps through line-by-line of the source code, but occasionally can jump to a different line of source code.
 ### Four Kinds of Java Statements
@@ -72,10 +62,14 @@ Respond to any email verification. One of your should create a team, get a join 
 
 ### In-class Pair Programming Activity
 
+Jot down answers to these review questions, you'll submit them at the end of class.
 * Review:
 	* What are the two roles in pair programming?
 	* How can computers are you looking at in pair programming?
-	* When should you switch roles or end the session?
+	* *When* should you switch roles or end the session? List at least two different conditions.
+	* *How* should you switch roles? List at least two different actions before switching roles can happen.
+
+
 
 In your new teams, you'll join a breakout room,
 * continue working on your Software Setup
@@ -156,3 +150,35 @@ Compile it
 ./gradlew build
 ```
 and run it in your Battlecode Client.
+
+We'll come back to the main room to debrief before returning to breakout rooms.
+
+### The Need for Git (In-Class Activity)
+
+The situation: last time, we had a driver (Gabriel) who worked on some code, that now we wish to share with the rest of the class. After our previous activity, one of you in each team has typed code and has it on their computer, but the other teammates don't have it.
+
+This will occur for all of you when you are working with your teammates, developing your own Battlecode player, or in the future when doing in-class activities.
+
+Write down your answers to the following questions, you'll submit them at the end.
+
+* What are two ways that you already know how to transfer code from one person to another? (Assume you don't know Git).
+* What is a pro and con of each of the two ways above?
+
+We are now going to share code by using ZIP files. In pairs (breakout rooms), name one of you as Partner A and the other as Partner B. Using whatever means you know how to do or can look up with Google, create a ZIP file of your cloned `dgp-26wi` directory. Message and send this ZIP file to 
+
+* What are three (or more) advantages of using ZIP files to share code?
+* What are three (or more) disadvantages of ZIP files?
+
+### Submit
+
+Now it's time to submit your answers to 
+* Pair Programming Review
+* The Need for Git
+
+[into this Canvas assignment.]()
+
+### Next Time
+
+Do Homework 01, due Thursday at 5pm. Watch for Homework 02 coming out, where you will
+* watch the Battlecode lecture on Botmaking, focus on cheese mining.
+* draw another picture in your notes
