@@ -3,7 +3,6 @@ package week02a;
 import battlecode.common.*;
 
 import java.util.Random;
-import battlecode.common.GameActionException;
 
 
 /**
@@ -25,7 +24,7 @@ public class RobotPlayer {
      * import at the top of this file. Here, we *seed* the RNG with a constant number (6147); this makes sure
      * we get the same sequence of numbers every time this code is run. This is very useful for debugging!
      */
-    static final Random rng = new Random(6147);
+    static final Random rand = new Random(6147);
 
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
@@ -93,6 +92,24 @@ public class RobotPlayer {
         }
 
         // Your code should never reach here (unless it's intentional)! Self-destruction imminent...
+    }
+
+    public static void moveRandom(RobotController rc) throws GameActionException {
+        MapLocation forwardLoc = rc.adjacentLocation(rc.getDirection());
+
+        if (rc.canRemoveDirt(forwardLoc)) {
+            rc.removeDirt(forwardLoc);
+        }
+
+        if (rc.canMoveForward()) {
+            rc.moveForward();
+        } else {
+            Direction random = directions[rand.nextInt(directions.length)];
+
+            if (rc.canTurn()) {
+                rc.turn(random);
+            }
+        }
     }
 
     public static void runRatKing(RobotController rc) throws GameActionException {
