@@ -15,7 +15,8 @@
 ### The Four Git File Statuses
 
 * Tracks changes in a top-level directory called a *repository*, or a repo.
-* When you clone a repository locally, it's called a *working directory* and can have files in three different *statuses*
+* When you clone a repository locally, it's called a *working directory* and can have files in four different *statuses*
+  * untracked
   * clean, committed (unmodified)
   * modified, staged
   * modified, unstaged
