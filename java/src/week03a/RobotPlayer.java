@@ -1,4 +1,4 @@
-package week02a;
+package week03a;
 
 import battlecode.common.*;
 
@@ -48,6 +48,8 @@ public class RobotPlayer {
         Direction.NORTHWEST,
     };
 
+    public static MapLocation mineLoc = null;
+
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
      * It is like the main function for your robot. If this method returns, the robot dies!
@@ -81,7 +83,7 @@ public class RobotPlayer {
 
                     runRatKing(rc);
                 } else {
-                    Direction d = directions[rng.nextInt(directions.length)];
+                    Direction d = directions[rng.nextInt(directions.length - 1)];
 
                     if (rc.canMove(d)) {
                         rc.move(d);
@@ -132,11 +134,49 @@ public class RobotPlayer {
         // Your code should never reach here (unless it's intentional)! Self-destruction imminent...
     }
     public static void moveRandom(RobotController rc) throws GameActionException {
+        MapLocation forwardLoc = rc.adjacentLocation(rc.getDirection());
+        Direction d = null;
+        
+
+        if (d == null) {
+
+        }
+
+        if (rc.canTurn()) {
+            rc.turn(d);
+        }
+
+        if (rc.canMoveForward()) {
+            rc.moveForward();
+        } else {
+
+        }
     }
     
     public static void runRatKing(RobotController rc) throws GameActionException {
 
     }
-        
+    public static void runFindCheese(RobotController rc) throws GameActionException {
+        // search for cheese
+        MapInfo[] nearbyInfos = rc.senseNearbyMapInfos();
+
+        for (MapInfo info : nearbyInfos) {
+            if (info.getCheeseAmount() > 0) {
+                Direction toCheese = rc.getLocation().directionTo(info.getMapLocation());
+
+                if (rc.canTurn(toCheese)) {
+                    rc.turn(toCheese);
+                    break;
+                }
+            }
+        }
+
+        while (!rc.getLocation().isWithinDistanceSquared(mineLoc, 4)) {
+            if (rc.canMoveForward()) {
+                rc.moveForward();
+            }
+        }
     }
+    
+}
 
