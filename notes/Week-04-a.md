@@ -65,7 +65,7 @@ git remote add team git@github.com:<username>/dgp-26wi.git
 From now on, any private work you want only your team to see (like your Battlecode player code), you will push to / pull from `team` only.
 
 ```
-git pull team
+git pull team main
 ```
 
 instead of just
@@ -77,7 +77,7 @@ git pull
 and
 
 ```
-git push team
+git push team main
 ```
 instead of just
 ```
