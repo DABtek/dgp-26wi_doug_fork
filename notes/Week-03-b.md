@@ -40,7 +40,7 @@ Once baby rats return to their king, or close enough
 ### Radio Communication
 
 Two kinds
-* Shared array (one-way broadway, rat kings to the everyone)
+* Shared array (one-way broadcast, rat kings to the everyone)
 * Squeaks (peer-to-peer, baby rats) to all rats on locations within this range
 
 Questions:
