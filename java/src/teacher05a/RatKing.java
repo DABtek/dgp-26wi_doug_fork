@@ -10,7 +10,7 @@ public class RatKing extends RobotSubPlayer {
     }
 
     @Override
-    public void doAction(RobotController rc) throws GameActionException {
+    public void doAction() throws GameActionException {
         int currentCost = rc.getCurrentRatCost();
 
         MapLocation[] potentialSpawnLocations = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), 8);
@@ -26,34 +26,6 @@ public class RatKing extends RobotSubPlayer {
                 rc.pickUpCheese(loc);
                 break;
             }
-        }
-
-        Message[] squeaks = rc.readSqueaks(rc.getRoundNum());
-        System.out.println("Received " + squeaks.length + " squeaks");
-
-        for (Message msg : squeaks) {
-            int rawSqueak = msg.getBytes();
-
-            if (getSqueakType(rawSqueak) != SqueakType.CHEESE_MINE) {
-                continue;
-            }
-
-            int encodedLoc = getSqueakValue(rawSqueak);
-
-            if (mineLocs.contains(encodedLoc)) {
-                continue;
-            }
-
-            mineLocs.add(encodedLoc);
-            int firstInt = getFirstInt(encodedLoc);
-            int lastInt = getLastInt(encodedLoc);
-
-            rc.writeSharedArray(2 * numMines + 2, firstInt);
-            rc.writeSharedArray(2 * numMines + 3, lastInt);
-            System.out.println("Writing to shared array: " + firstInt + ", " + lastInt);
-            System.out.println("Cheese mine located at: " + getX(encodedLoc) + ", " + getY(encodedLoc));
-
-            numMines++;
         }
 
         // moveRandom(rc);
