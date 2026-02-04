@@ -1,15 +1,10 @@
 package shredders;
 
 import battlecode.common.*;
-
 import java.util.ArrayList;
 import java.util.Random;
 
 public class RobotPlayer {
-        public static enum State {
-        FIND_CHEESE,
-        RETURN_TO_KING,        
-    }
 
     public static enum SqueakType {
         INVALID,
@@ -18,9 +13,6 @@ public class RobotPlayer {
         CHEESE_MINE,
         CAT_FOUND,
     }
-
-
-    public static State currentState;
 
     public static SqueakType[] squeakTypes = SqueakType.values();
     public static Direction[] directions = Direction.values();
@@ -32,37 +24,46 @@ public class RobotPlayer {
 
     static MapLocation kingLoc = null;
 
+    // When team cheese is at/above this value, rally near the king to enable promotions
+    public static final int PROMO_RALLY_CHEESE = 50;
+
+    // Only a small subset of babies should rally/hold for promotion.
+    // This prevents the entire swarm from freezing around the king.
+    public static boolean isKingBuilder(RobotController rc) {
+        // 1 out of 5 babies becomes a builder (tuneable)
+        return (rc.getID() % 5) == 0;
+    }
+
+
 
     public static void run(RobotController rc) {
-
-        // Only baby rats will pay attention to this
-        currentState = State.FIND_CHEESE;
-
-       /*  if (rc.getType().isBabyRatType()) {
-            if (rc.getID() % 2 == 0) {
-                brc = new CheeseFinder();
-            } else {
-                brc = new CatAttacker();
-            }
-        } */
 
         while (true) {
         try {
             if (rc.getType().isRatKingType()) {
                 runRatKing(rc);
             } else {
-                if (kingLoc == null) {
-                    kingLoc = rc.getLocation();
+                // Read king beacon from shared array each turn (written by the Rat King)
+                MapLocation beacon = kingLoc(rc);
+                if (beacon != null) {
+                    kingLoc = beacon;
                 }
-               // brc.doSomething(rc);
+
+                // Try to promote this baby into a new king before doing anything else
+                if (tryBuildKing(rc)) {
+                    continue; // this robot is now a king; next loop will runRatKing()
+                }
+               
                 
-                switch (currentState) {
-                    case FIND_CHEESE:
-                        runFindCheese(rc);
-                        break;
-                    case RETURN_TO_KING:
-                        runReturnToKing(rc);
-                        break;
+                // Per-robot decision (DO NOT use shared global state)
+                int raw = rc.getRawCheese();
+                boolean builder = isKingBuilder(rc);
+                boolean rally = (builder && kingLoc != null && rc.getAllCheese() >= PROMO_RALLY_CHEESE);
+
+                if (raw > 0 || rally) {
+                    runReturnToKing(rc);
+                } else {
+                    runFindCheese(rc);
                 }
                 }
             } catch (GameActionException e) {
@@ -74,14 +75,36 @@ public class RobotPlayer {
             } finally {
                 Clock.yield();
             }
+            if (rc.getAllCheese() >= 45) {
+    String role = null;
+    System.out.println(
+        "PROMO? r=" + rc.getRoundNum()
+        + " id=" + rc.getID()
+        + " role=" + role
+        + " cheese=" + rc.getAllCheese()
+        + " can=" + rc.canBecomeRatKing()
+        + " action=" + rc.isActionReady()
+       // + " d2King=" + (kingLoc(rc) == null ? -1 : rc.getLocation().distanceSquaredTo(kingLoc(rc)))
+    );
+}
         }
+    }
+
+    private static MapLocation kingLoc(RobotController rc) throws GameActionException {
+        int kingX = rc.readSharedArray(0);
+        int kingY = rc.readSharedArray(1);
+        // If the king hasn't written yet, return null
+        if (kingX == 0 && kingY == 0) return null;
+        return new MapLocation(kingX, kingY);
     }
 
     public static void runRatKing(RobotController rc) throws GameActionException {
         int currentCost = rc.getCurrentRatCost();
 
         MapLocation[] potentialSpawnLocations = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), 8);
-        boolean spawn = currentCost <= 10 || rc.getAllCheese() > currentCost + 2500;
+        boolean spawn = currentCost <= 10 || rc.getAllCheese() > currentCost + 1900;
+
+        
 
         for (MapLocation loc : potentialSpawnLocations) {
             if (spawn && rc.canBuildRat(loc)) {
@@ -92,9 +115,6 @@ public class RobotPlayer {
             if (rc.canPickUpCheese(loc)) {
                 rc.pickUpCheese(loc);
                 break;
-            }
-            if (rc.canRemoveDirt(loc)) {
-                rc.removeDirt(loc);
             }
         }
 
@@ -191,16 +211,28 @@ public class RobotPlayer {
 
         if ((cheeseLoc != null) && rc.canPickUpCheese(cheeseLoc)) {
             rc.pickUpCheese(cheeseLoc);
-            currentState = State.RETURN_TO_KING;
-            rc.setIndicatorString("Returning to king.");
+            rc.setIndicatorString("Picked up cheese; will return");
         }
-        
     }
 
     public static void runReturnToKing(RobotController rc) throws GameActionException {
+        if (kingLoc == null) {
+            // No known king location yet; caller will keep exploring
+            rc.setIndicatorString("No king beacon yet");
+            return;
+        }
         Direction toKing = rc.getLocation().directionTo(kingLoc);
         MapLocation nextLoc = rc.getLocation().add(toKing);
         int rawCheese = rc.getRawCheese();
+
+        // HOLD inside king's 3x3 during promotion rally (builders only)
+        if (rc.getAllCheese() >= PROMO_RALLY_CHEESE && isKingBuilder(rc)) {
+            int d2 = rc.getLocation().distanceSquaredTo(kingLoc);
+            if (d2 <= 2) {
+                rc.setIndicatorString("Holding in 3x3 for promotion (builder)");
+                return;
+            }
+        }
 
         if (rc.canTurn(toKing)) {
             rc.turn(toKing);
@@ -217,10 +249,18 @@ public class RobotPlayer {
                     rc.setIndicatorString("Can transfer " + rawCheese + " to king at " + actualKingLoc.toString() + "? " + result);
                     if (result) {
                         rc.transferCheese(actualKingLoc, rawCheese);
-                        currentState = State.FIND_CHEESE;
+
+                        // Only builders stick around to hold for promotion; others will explore next turn
+                        if (rc.getAllCheese() >= PROMO_RALLY_CHEESE && isKingBuilder(rc)) {
+                            rc.setIndicatorString("Transferred; holding for promotion (builder)");
+                            // fall through to HOLD/movement logic below
+                        } else {
+                            rc.setIndicatorString("Transferred; returning to explore");
+                            return;
+                        }
                     } else {
-                        // Return to finding cheese, try to randomly come back to king another way
-                        currentState = State.FIND_CHEESE;
+                        // Can't transfer; caller will decide behavior next turn
+                        rc.setIndicatorString("Near king but cannot transfer");
                     }
                     break;
                 }
@@ -237,16 +277,32 @@ public class RobotPlayer {
             rc.removeDirt(nextLoc);
         }
 
-        // TODO replace with pathfinding for the pathfinding lecture
+        // Move toward the king (simple greedy movement)
         if (rc.canMove(toKing)) {
-           rc.move(toKing);
+            rc.move(toKing);
+        } else if (rc.canMoveForward()) {
+            // Fallback: keep moving forward if we can't move in the desired direction
+            rc.moveForward();
+        } else {
+            // If totally blocked, pick a new direction to avoid deadlock
+            Direction turnDir = directions[rand.nextInt(directions.length - 1)];
+            if (rc.canTurn(turnDir)) {
+                rc.turn(turnDir);
+            }
         }
+    }
 
+    // Baby-side promotion: THIS baby becomes a new Rat King when the engine allows it.
+    public static boolean tryBuildKing(RobotController rc) throws GameActionException {
+        if (!rc.getType().isBabyRatType()) return false;
+        if (!isKingBuilder(rc)) return false;
+        if (!rc.isActionReady()) return false;
+        if (rc.getAllCheese() < PROMO_RALLY_CHEESE) return false;
+        if (!rc.canBecomeRatKing()) return false;
 
-        if (rawCheese == 0) {
-            currentState = State.FIND_CHEESE;
-        }
-        
+        rc.becomeRatKing();
+        System.out.println("NEW KING BUILT at round " + rc.getRoundNum() + " by rat " + rc.getID());
+        return true;
     }
 
     public static int getFirstInt(int loc) {
@@ -296,17 +352,3 @@ public class RobotPlayer {
     }
     
 }
-//STRADEGY!!
-/*Rat king needs to dig,
-Rat king moves to closest cheese mine 
-spawn 2 teams of rats
-team 1 get cheese, return to king
-if (ratscount = 2k )
-all rats find cheese
-team 2 builds traps and fights
-if (ratscount = 2k + 1)
-
-once rats exceed 6 and global cheese = 500 -> form second ratking
-the rat the is closest to the ratking has the other rats go to them to form 
-void becomeRatKing() throws GameActionException
-grouping necessary to form ratking */
