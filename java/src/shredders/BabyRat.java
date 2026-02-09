@@ -2,7 +2,7 @@ package shredders;
 
 import battlecode.common.*;
 
-public abstract class BabyRat extends RobotPlayer {
+public abstract class BabyRat extends RobotSubPlayer {
     protected static MapLocation kingLoc = null;
 
     public static SqueakType[] squeakTypes = SqueakType.values();
@@ -24,7 +24,7 @@ public abstract class BabyRat extends RobotPlayer {
 
     public static BabyRat createToggle(RobotController rc) throws GameActionException {
         int numRats = rc.readSharedArray(0);
-        if ((numRats % 2) == 0) {
+        if ((rc.getID() % 2) == 0) {
             return new CheeseFinder(rc);
         } else {
             return new CatAttacker(rc);

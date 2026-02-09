@@ -21,7 +21,10 @@ public class PathFinding {
     static int startBugDist = Integer.MAX_VALUE;
 
     public static void moveToTarget(RobotController rc, MapLocation target, MapLocation curr) throws GameActionException {
-        MapLocation current = rc.getLocation();
+        
+        if (target == null) {
+            return; 
+        }
         Direction d = rc.getLocation().directionTo(target);
 
         if (ps == PathState.MOVE_TO_TARGET) {
@@ -33,7 +36,10 @@ public class PathFinding {
                 bestDist = startBugDist;
                 lastWallDir = d;
 
+                followWall(rc, target, curr);
             } 
+        } else {
+            followWall(rc, target, curr);
         }
         
     }
@@ -65,6 +71,14 @@ public class PathFinding {
                         return; 
                     }
                 }
+            }
+
+                public static void reset() {
+                    ps = PathState.MOVE_TO_TARGET;
+                    bestDist = Integer.MAX_VALUE;
+                    target = null;
+                    lastWallDir = null;
+                    startBugDist = Integer.MAX_VALUE;
         }
     }
     

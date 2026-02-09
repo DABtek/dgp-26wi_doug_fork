@@ -9,6 +9,5 @@ if (ratscount = 2k + 1)
 
 once rats exceed 6 and global cheese = 100 -> form second ratking
 boolean canBecomeRatKing()
-Link icon
 void becomeRatKing() throws GameActionException
 the rat the is closest to the ratking has the other rats go to them to form grouping necessary to form ratking
