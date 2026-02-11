@@ -18,7 +18,7 @@ static final Direction[] directions = {
 };
 
     static final Random rand = new Random(6147);
-    static Direction d = null;
+    protected Direction d = null;
 
 
     protected RobotController rc;
@@ -30,35 +30,23 @@ static final Direction[] directions = {
 
         // Move in a straight line until we bump into something
     // then turn to a new direction
-    public static void moveRandom(RobotController rc) throws GameActionException {
+    public void moveRandom(RobotController rc) throws GameActionException {
 
         if (d == null) {
             d = directions[rand.nextInt(directions.length)];
         }
-        if (rc.canTurn(d)) {
-            rc.turn(d);
 
         if (rc.canMoveForward()) {
-            rc.moveForward();
-            return;
+                rc.moveForward();
+                return;
             }
-                Direction tryDir = d;
-    for (int i = 0; i < 8; i++) {
-        tryDir = tryDir.rotateLeft();
-        if (rc.canTurn(tryDir)) rc.turn(tryDir);
-        if (rc.canMoveForward()) {
-            rc.moveForward();
-            d = tryDir;
-            return;
+
+            d = directions[rand.nextInt(directions.length)];
+            if (rc.canTurn(d)) {
+                rc.turn(d);
+            }
         }
-    }
-
-    // Fully stuck — re-roll for next turn
-    d = directions[rand.nextInt(directions.length)];
-    }
-}
-
-    
+        
     // public void writeRatKingCount(int ratKingCount) throws GameActionException {
     //     rc.writeSharedArray(0, ratKingCount);
     // }

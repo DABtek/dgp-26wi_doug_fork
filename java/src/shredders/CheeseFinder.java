@@ -1,7 +1,5 @@
 package shredders;
-
 import java.util.ArrayList;
-
 import battlecode.common.*;
 
 public class CheeseFinder extends BabyRat {
@@ -76,23 +74,25 @@ public class CheeseFinder extends BabyRat {
                 pf.moveToTarget(rc, cheeseLoc, rc.getLocation());
                 rc.setIndicatorString("finding cheese" + cheeseLoc);
                 // no visible cheese, go to known mineLoc
-            } else if (newCheeseMine != null) {
-                if (lastPathTarget == null || !lastPathTarget.equals(newCheeseMine)) {
-                    pf.reset();
-                    lastPathTarget = newCheeseMine;
-                }
-                pf.moveToTarget(rc, newCheeseMine, rc.getLocation());
-                rc.setIndicatorString("finding cheese mine at " + mineLoc.toString());
-            } else {
-                // no visible cheese or known mine, keep wandering
-                RobotSubPlayer.moveRandom(rc);
-                rc.setIndicatorString("wandering for cheese");
+            } else if (mineLoc != null) {
+            if (lastPathTarget == null || !lastPathTarget.equals(mineLoc)) {
+                pf.reset();
+                lastPathTarget = mineLoc;
             }
+                pf.moveToTarget(rc, mineLoc, rc.getLocation());
+                rc.setIndicatorString("heading to mine " + mineLoc);
+                    } else {
+                        // no visible cheese or known mine, keep wandering
+                        moveRandom(rc);
+                        rc.setIndicatorString("wandering for cheese");
+                    }
 
 
         if ((cheeseLoc != null) && rc.canPickUpCheese(cheeseLoc)) {
             rc.pickUpCheese(cheeseLoc);
             currentState = State.RETURN_TO_KING;
+            pf.reset();
+            lastPathTarget = null;
             rc.setIndicatorString("Returning to king.");
         }
     }
@@ -171,7 +171,7 @@ public class CheeseFinder extends BabyRat {
             Direction right = toKing.rotateRight();
             if (rc.canMove(left)) rc.move(left);
             else if (rc.canMove(right)) rc.move(right);
-            else RobotSubPlayer.moveRandom(rc);
+            else moveRandom(rc);
         }
                 if (rawCheese == 0) {
                     currentState = State.FIND_CHEESE;
