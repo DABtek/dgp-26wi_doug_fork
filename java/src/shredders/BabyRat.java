@@ -24,7 +24,9 @@ public abstract class BabyRat extends RobotSubPlayer {
 
     public static BabyRat createToggle(RobotController rc) throws GameActionException {
         int numRats = rc.readSharedArray(0);
-        if ((rc.getID() % 2) == 0) {
+        if ((rc.getID() % 5) == 0) {
+            return new KingBuilder(rc);
+        } else if ((rc.getID() % 2) == 0) {
             return new CheeseFinder(rc);
         } else {
             return new Attacker(rc);
