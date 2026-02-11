@@ -27,7 +27,7 @@ public abstract class BabyRat extends RobotSubPlayer {
         if ((rc.getID() % 2) == 0) {
             return new CheeseFinder(rc);
         } else {
-            return new CatAttacker(rc);
+            return new Attacker(rc);
         }
     }
 
