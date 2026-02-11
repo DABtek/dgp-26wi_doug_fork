@@ -43,7 +43,7 @@ public class Attacker extends BabyRat {
             return;
         }
 
-        if ((catLoc != null) && rc.canAttack(enemyLoc)) {
+        if ((enemyLoc != null) && rc.canAttack(enemyLoc)) {
             rc.attack(enemyLoc);
             rc.setIndicatorString("Victory or death!");
         }
