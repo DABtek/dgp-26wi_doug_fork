@@ -9,8 +9,9 @@
 ### Sense Interval for Cat Attackers
 
 We want cat attackers to:
-* keep following a cat and attacking it once it finds one
-* look all around for a cat every "sense interval"
+1. keep following a cat and attacking it once it finds one
+2. look all around for a cat every "sense interval"
+
 ### Move Random for RatKing
 
 * Pick a random direction
