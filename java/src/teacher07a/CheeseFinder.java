@@ -1,6 +1,7 @@
-package teacher05a;
+package teacher07a;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import battlecode.common.*;
 
@@ -14,11 +15,7 @@ public class CheeseFinder extends BabyRat {
     public static State currentState;
     public static MapLocation mineLoc = null;
     public static int numMines = 0;
-    public static ArrayList<Integer> mineLocs = new ArrayList<>();
-
-    // Whether we are randomly turning to avoid getting unstuck
-    // while returning to the king
-    public static boolean gettingUnstuck = false;
+    public static List<MapLocation> mineLocs = new ArrayList<>();
 
     public CheeseFinder(RobotController rc) {
         super(rc);
@@ -37,34 +34,68 @@ public class CheeseFinder extends BabyRat {
         }
     }
 
+    private MapLocation senseCheeseAndMine() throws GameActionException {
+        MapInfo[] nearbyInfos = rc.senseNearbyMapInfos();
+
+        // If we don't know of a cheese mine yet, or we're close enough
+        // just sense for cheese and pick them up
+        for (MapInfo info : nearbyInfos) {
+            MapLocation loc = info.getMapLocation();
+            if (info.getCheeseAmount() > 0) {
+                Direction toCheese = rc.getLocation().directionTo(loc);
+
+                if (rc.canTurn(toCheese)) {
+                    rc.turn(toCheese);
+                    return info.getMapLocation();
+                }
+            }
+            if (info.hasCheeseMine()) {
+                mineLoc = info.getMapLocation();
+                System.out.println("Found a cheese mine at " + mineLoc.toString());
+                rc.setIndicatorString("Found a cheese mine at " + mineLoc.toString());
+            }
+        }
+
+        return null;
+    }
+
+    private void senseAndAttackCat() throws GameActionException {
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+
+        // If we don't know of a cheese mine yet, or we're close enough
+        // just sense for cheese and pick them up
+        for (RobotInfo info : nearbyRobots) {
+            if (info.getType().isCatType()) {
+                MapLocation robotLoc = info.getLocation();
+                if (rc.canAttack(robotLoc)) {
+                    rc.attack(robotLoc);
+                }
+            }
+        }
+    }
+
 
     public void runFindCheese() throws GameActionException {
         // search for cheese
-        MapInfo[] nearbyInfos = rc.senseNearbyMapInfos();
         MapLocation cheeseLoc = null;
         MapLocation here = rc.getLocation();
 
-        if ((mineLoc == null) || (mineLoc.distanceSquaredTo(here) < 25)) {
-            // If we don't know of a cheese mine yet, or we're close enough
-            // just sense for cheese and pick them up
-            for (MapInfo info : nearbyInfos) {
-                MapLocation loc = info.getMapLocation();
-                if (info.getCheeseAmount() > 0) {
-                    Direction toCheese = rc.getLocation().directionTo(loc);
 
-                    if (rc.canTurn(toCheese)) {
-                        rc.turn(toCheese);
-                        cheeseLoc = info.getMapLocation();
-                        break;
-                    }
-                }
-                if (info.hasCheeseMine()) {
-                    mineLoc = info.getMapLocation();
-                    System.out.println("Found a cheese mine at " + mineLoc.toString());
-                    rc.setIndicatorString("Found a cheese mine at " + mineLoc.toString());
-                }
+        // Choose a cheese mine at random if we can, otherwise, sense and explore
+        // any cheese mine around us
+        if ((mineLoc == null) || (mineLoc.distanceSquaredTo(here) < 25)) {
+            // if we have more than two mine locations, pick one at random
+            if (mineLocs.size() > 2) {
+                mineLoc = mineLocs.get(rand.nextInt(mineLocs.size()));
+            } else {
+                // set out in a random direction to explore
+                setRandomDirection();
+                cheeseLoc = senseCheeseAndMine();
             }
-        } else {
+
+        }
+                
+        if (mineLoc != null) {
             // We know of a cheese mine, get closer because we are too far away
             System.out.println("Going straight to cheese mine at " + mineLoc.toString());
             Direction toMine = rc.getLocation().directionTo(mineLoc);
@@ -73,10 +104,15 @@ public class CheeseFinder extends BabyRat {
             }
         }
 
+        // At this point, we are locked in on a mine
+        // or randomly exploring
+
         MapLocation forward = here.add(rc.getDirection());
         if (rc.canRemoveDirt(forward)) {
             rc.removeDirt(forward);
         }
+
+        senseAndAttackCat();
 
         if (rc.canMoveForward()) {
             rc.moveForward();
@@ -92,8 +128,10 @@ public class CheeseFinder extends BabyRat {
 
         if ((cheeseLoc != null) && rc.canPickUpCheese(cheeseLoc)) {
             rc.pickUpCheese(cheeseLoc);
-            currentState = State.RETURN_TO_KING;
-            rc.setIndicatorString("Returning to king.");
+            if (rc.getRawCheese() > 20) {
+                currentState = State.RETURN_TO_KING;
+            }
+            rc.setIndicatorString("Full of cheese, returning to king.");
         }
 
     }
@@ -105,13 +143,19 @@ public class CheeseFinder extends BabyRat {
         int rawCheese = rc.getRawCheese();
 
         // Only turn to the king if we are unstuck
-        if (gettingUnstuck && rc.canTurn(toKing)) {
+        if (rc.canTurn(toKing)) {
             rc.turn(toKing);
         }
 
-        if (rc.canSenseLocation(kingLoc) && (kingLoc.distanceSquaredTo(here) <= 16 )) {
+        int dist = kingLoc.distanceSquaredTo(here);
+        boolean canSense = rc.canSenseLocation(kingLoc);
+        System.out.println("Can sense kingLoc " + kingLoc.toString() + " ? " + canSense + " at distSquared " + dist);
+        // We could have spawned on the opposite side of our king, 5 is max distance across a 3x3 king
+        if (dist <= 25) {
 
             RobotInfo[] nearbyRobots = rc.senseNearbyRobots(kingLoc, 8, rc.getTeam());
+            boolean squeaked = false;
+            boolean receivedMineLoc = false;
 
             for (RobotInfo robotInfo : nearbyRobots) {
                 if (robotInfo.getTeam() != rc.getTeam()) {
@@ -124,6 +168,7 @@ public class CheeseFinder extends BabyRat {
                     if (result) {
                         rc.transferCheese(actualKingLoc, rawCheese);
                     }
+                    kingLoc = actualKingLoc; // update our kingLoc for next time, since king moves around
                     continue; // try to find other baby rats to squeak to
                 } else {
                     // we found another baby rat, squeak or read squeaks,
@@ -135,23 +180,25 @@ public class CheeseFinder extends BabyRat {
                         System.out.println("From " + here.toString() + " Sent a squeak " + msgByte + " for mine at " + mineLoc.toString());
                         // go back to finding cheese mode
                         // if we have squeaked to at least one other baby rat
-                        currentState = State.FIND_CHEESE;
-                        return;
+                        squeaked = true;
                     } else {
-                        boolean receivedMineLoc = false;
                         //while (!receivedMineLoc) {
                             Message[] squeakMessages = rc.readSqueaks(rc.getRoundNum());
+                            System.out.println("Received " + squeakMessages.length + " messages");
 
                             for (Message m : squeakMessages) {
                                 int msg = m.getBytes();
                                 if (getSqueakType(msg) == SqueakType.CHEESE_MINE) {
                                     int encodedLoc = getSqueakValue(msg);
                                     mineLoc = new MapLocation(getX(encodedLoc), getY(encodedLoc));
+                                    mineLocs.add(mineLoc);
                                     System.out.println("Received cheese mine " + mineLoc.toString());
+                                    System.out.println("Mine locs size " + mineLocs.size());
                                     receivedMineLoc = true;
                                     // return to cheese finding
                                     // if we received a squeak telling us about a mine
-                                    currentState = State.FIND_CHEESE;
+
+                                    mineLoc = null; // reset so we choose a random new mine next time
                                     return;
                                 }
                             }
@@ -161,7 +208,16 @@ public class CheeseFinder extends BabyRat {
                 }
             }
 
+            // If we haven't squeaked to another baby rat, stay here until we have
+            if (squeaked || receivedMineLoc) {
+                currentState = State.FIND_CHEESE;
+                mineLoc = null; // reset so we choose a random new mine next time
+                return;
+            }
         }
+
+        MapLocation forwardLoc = rc.adjacentLocation(rc.getDirection());
+        RobotInfo forwardRobot = rc.senseRobotAtLocation(forwardLoc);
 
         if (rc.canRemoveDirt(nextLoc)) {
             rc.removeDirt(nextLoc);
@@ -170,19 +226,24 @@ public class CheeseFinder extends BabyRat {
         if (rc.canMoveForward()) {
             rc.moveForward();
             rc.setIndicatorString("Returning to king.");
+        } else if (forwardRobot != null) {
+            // simply skip this turn and wait for the other robot to move
+            return;
         } else {
+
+            rc.setIndicatorString("Cannot moveforward while turned  " + rc.getDirection().toString());
+
             // Toggle getting unstuck; we proceed in a straight line
             // after getting unstuck until the next time we hit an
             // obstacle, then we go straight back to king again
             // hopefully from a different direction.
-            gettingUnstuck = !gettingUnstuck;
-            while (!rc.canMoveForward()) {
-                d = directions[rand.nextInt(directions.length-1)];
-                if (rc.canTurn()) {
-                    rc.turn(d);
-                }
-            }
-            rc.moveForward();
+            //gettingUnstuck = !gettingUnstuck;
+            // if (!rc.canMoveForward()) {
+            //     d = directions[rand.nextInt(directions.length-1)];
+            //     if (rc.canTurn()) {
+            //         rc.turn(d);
+            //     }
+            // }
             rc.setIndicatorString("Blocked while returning to king, turning " + d.toString());
             return;
         }

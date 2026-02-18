@@ -1,4 +1,4 @@
-package teacher05a;
+package teacher07a;
 
 import battlecode.common.*;
 
