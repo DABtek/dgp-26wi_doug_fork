@@ -47,13 +47,13 @@ static final Direction[] directions = {
             }
         }
         
-    // public void writeRatKingCount(int ratKingCount) throws GameActionException {
-    //     rc.writeSharedArray(0, ratKingCount);
-    // }
+    public void writeRatKingCount(int ratKingCount) throws GameActionException {
+        rc.writeSharedArray(0, ratKingCount);
+    }
 
-    // public void writeRatKingLocation(int ratKingIndex, MapLocation kingLoc) throws GameActionException {
-    //     rc.writeSharedArray(SHARED_ARRAY_LENGTH - ratKingIndex - 1, toInteger(kingLoc));
-    // }
+    public void writeRatKingLocation(int ratKingIndex, MapLocation kingLoc) throws GameActionException {
+         rc.writeSharedArray(SHARED_ARRAY_LENGTH - ratKingIndex - 1, toInteger(kingLoc));
+     }
 
     // All robot subplayers must implement this method
     public abstract void doAction() throws GameActionException;

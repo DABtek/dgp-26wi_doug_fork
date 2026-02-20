@@ -4,64 +4,211 @@ import battlecode.common.*;
 
 public class KingBuilder extends BabyRat {
 
-    // Must match RatKing shared-array beacon
+    // ===== Comms-Lite: shared array slots (MUST match your current Shredders layout) =====
+    // [0] used elsewhere (spawned count / role toggle)
+    // [1],[2] king beacon written by RatKing
     private static final int SA_KING_X = 1;
     private static final int SA_KING_Y = 2;
 
-    // Promotion thresholds (rules)
+    // [3] SAFE per you: use as flags bitfield
+    private static final int SA_FLAGS = 3;
+
+    // Flag bits
+    private static final int FLAG_SECOND_KING_BUILT = 1 << 0;
+
+    // ===== Promotion / Rally Knobs =====
     private static final int PROMO_COST = 50;
+
+    // Start drifting back toward king before PROMO_COST so we can form the 7-pack
     private static final int RALLY_START = 45;
 
-    // How close to king we try to pack (3x3 around the builder)
-    private static final int HOLD_RADIUS2 = 2; // distanceSquared <= 2 is inside tight 3x3-ish
+    // Builders should NOT all pile onto the same exact squares; use a slightly larger “near king” zone
+    private static final int RALLY_RADIUS2 = 20; // ~4-5 tiles
+
+    // When we're very close, hold to help satisfy 3x3 packing
+    private static final int HOLD_RADIUS2 = 5;   // inside-ish of 3x3 region
+
+    // Reserve to avoid draining kings to death
+    private static final int RESERVE = 60;
+
+    // Long-game option: re-enable promotion attempts harder late (optional)
+    private static final int LONG_GAME_ROUND = 1300;
+
+    // Simple target memory for cheese pickup (optional light)
+    private MapLocation lastSeenCheese = null;
+    private int lastSeenCheeseRound = -9999;
+    private static final int CHEESE_MEMORY_ROUNDS = 20;
 
     public KingBuilder(RobotController rc) {
         super(rc);
     }
 
-        @Override
+    @Override
     public void doAction() throws GameActionException {
 
-        // Promote immediately if possible
-        if (rc.isActionReady() && rc.getAllCheese() >= PROMO_COST && rc.canBecomeRatKing()) {
-            rc.becomeRatKing();
-            System.out.println("PROMOTION: new RatKing by id=" + rc.getID() + " r=" + rc.getRoundNum());
-            return;
-        }
-
-        // Only engage when we're close to promo window
-        int global = rc.getAllCheese();
-        if (global < RALLY_START) {
-            rc.setIndicatorString("KB idle g=" + global);
+        // If we're already at 2+ kings, builders should stop camping—become normal econ/fight behavior.
+        // We can't count kings without heavier comms, so we use a simple global flag: second king built at least once.
+        if (secondKingBuilt()) {
+            // Behave like a more aggressive CheeseFinder-lite:
+            econRoamAndDeliver();
             return;
         }
 
         MapLocation king = readKingBeacon();
-        if (king == null) {
-            rc.setIndicatorString("KB no beacon");
+        int global = rc.getAllCheese();
+
+        // 0) If we can become a king RIGHT NOW, do it first.
+        // (This is the only place we flip the shared flag)
+        if (king != null && canPromoteNow(global)) {
+            if (rc.canBecomeRatKing()) {
+                rc.becomeRatKing();
+                setSecondKingBuilt();
+                rc.setIndicatorString("KINGBUILDER PROMOTED");
+                return;
+            }
+        }
+
+        // 1) If we're carrying cheese, deliver it (always).
+        if (rc.getRawCheese() > 0) {
+            deliverToKingIfVisible(king);
+            moveToward(king); // continue moving toward king to deliver
+            rc.setIndicatorString("KINGBUILDER deliver");
             return;
         }
 
-        // === Camp tile selection (critical fix) ===
-        // We camp 4 tiles away from the king center so the 3x3 around the builder can be valid.
-        Direction side = ((rc.getID() & 1) == 0) ? Direction.EAST : Direction.WEST;
-        MapLocation camp = king;
-        camp = camp.add(side).add(side).add(side).add(side); // 4 steps
+        // 2) RALLY behavior when global cheese is near promotion.
+        // Goal: get enough bodies near the king without freezing the whole swarm.
+        if (king != null && shouldRally(global)) {
 
-        // Move to camp (one-step lite)
-        if (!rc.getLocation().equals(camp)) {
-            stepToward(camp);
+            int d2 = rc.getLocation().distanceSquaredTo(king);
+
+            // If very close, hold/jitter to help satisfy 7-in-3x3 without hard-locking
+            if (d2 <= HOLD_RADIUS2 && global >= PROMO_COST) {
+                // Try to stay put (cheap). If blocked by dirt in front, dig it.
+                MapLocation forward = rc.adjacentLocation(rc.getDirection());
+                if (rc.canRemoveDirt(forward)) rc.removeDirt(forward);
+                rc.setIndicatorString("KINGBUILDER HOLD g=" + global);
+                return;
+            }
+
+            // Otherwise, drift toward king, but don't all stack on one line:
+            // use tiny deterministic sidestep when close
+            if (d2 <= RALLY_RADIUS2) {
+                // sidestep/jitter to spread in the king zone
+                jitter();
+                rc.setIndicatorString("KINGBUILDER spread");
+                return;
+            }
+
+            // Farther away: go toward king
+            moveToward(king);
+            rc.setIndicatorString("KINGBUILDER rally");
+            return;
         }
 
-        // Diagnostics: pack size in ~3x3 around the builder
-        int pack = rc.senseNearbyRobots(2, rc.getTeam()).length;
-        rc.setIndicatorString("KB camp pack=" + pack + " g=" + global + " can=" + rc.canBecomeRatKing());
+        // 3) Otherwise: do econ work—find cheese, pick it up, then deliver.
+        econRoamAndDeliver();
+    }
 
-        if (rc.getLocation().equals(camp) && pack < 7 && (rc.getRoundNum() % 8 == 0)) {
-        // tiny nudge to avoid perfect deadlocks
-            roam();
+    // ===== Core behaviors =====
+
+    private void econRoamAndDeliver() throws GameActionException {
+        // Try immediate adjacent attack (opportunistic)
+        for (Direction dir : directions) {
+            MapLocation adj = rc.getLocation().add(dir);
+            if (rc.canAttack(adj)) {
+                rc.attack(adj);
+                return;
+            }
+        }
+
+        // Sense cheese nearby and bias toward it
+        MapInfo[] infos = rc.senseNearbyMapInfos();
+        MapLocation bestCheese = null;
+        int bestAmt = 0;
+
+        for (MapInfo mi : infos) {
+            if (mi.getCheeseAmount() > bestAmt) {
+                bestAmt = mi.getCheeseAmount();
+                bestCheese = mi.getMapLocation();
+            }
+        }
+
+        if (bestCheese != null) {
+            lastSeenCheese = bestCheese;
+            lastSeenCheeseRound = rc.getRoundNum();
+            Direction to = rc.getLocation().directionTo(bestCheese);
+            tryTurnMoveOrDig(to);
+            // pick up if possible (on adjacent tile)
+            if (rc.canPickUpCheese(bestCheese)) rc.pickUpCheese(bestCheese);
+            return;
+        }
+
+        // If we recently saw cheese, keep moving toward last location for a bit
+        if (lastSeenCheese != null && rc.getRoundNum() - lastSeenCheeseRound <= CHEESE_MEMORY_ROUNDS) {
+            Direction to = rc.getLocation().directionTo(lastSeenCheese);
+            tryTurnMoveOrDig(to);
+            return;
+        }
+
+        // Otherwise roam (center-biased, cheap)
+        MapLocation center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
+        Direction toCenter = rc.getLocation().directionTo(center);
+        tryTurnMoveOrDig(toCenter);
+        jitter();
+    }
+
+    private void deliverToKingIfVisible(MapLocation king) throws GameActionException {
+        if (king == null) return;
+
+        // Only transfer if the actual king robot is sensed nearby
+        RobotInfo[] allies = rc.senseNearbyRobots(king, 8, rc.getTeam());
+        int raw = rc.getRawCheese();
+        for (RobotInfo r : allies) {
+            if (r.getType().isRatKingType()) {
+                MapLocation kLoc = r.getLocation();
+                if (rc.canTransferCheese(kLoc, raw)) {
+                    rc.transferCheese(kLoc, raw);
+                }
+                return;
+            }
         }
     }
+
+    private void moveToward(MapLocation target) throws GameActionException {
+        if (target == null) {
+            jitter();
+            return;
+        }
+        Direction dir = rc.getLocation().directionTo(target);
+        tryTurnMoveOrDig(dir);
+    }
+
+    // Turn toward dir if possible, then either dig forward (if blocked by dirt) or move forward.
+    private void tryTurnMoveOrDig(Direction dir) throws GameActionException {
+        if (rc.canTurn(dir)) rc.turn(dir);
+
+        MapLocation forward = rc.adjacentLocation(rc.getDirection());
+        if (!rc.canMoveForward() && rc.canRemoveDirt(forward)) {
+            rc.removeDirt(forward);
+            return;
+        }
+        if (rc.canMoveForward()) {
+            rc.moveForward();
+        }
+    }
+
+    private void jitter() throws GameActionException {
+        Direction dir = directions[(rc.getID() + rc.getRoundNum()) % directions.length];
+        if (rc.canTurn(dir)) rc.turn(dir);
+        if (rc.canMoveForward()) rc.moveForward();
+        else {
+            MapLocation forward = rc.adjacentLocation(rc.getDirection());
+            if (rc.canRemoveDirt(forward)) rc.removeDirt(forward);
+        }
+    }
+
+    // ===== Comms-Lite helpers =====
 
     private MapLocation readKingBeacon() throws GameActionException {
         int x = rc.readSharedArray(SA_KING_X);
@@ -70,78 +217,25 @@ public class KingBuilder extends BabyRat {
         return new MapLocation(x, y);
     }
 
-    private boolean runFromNearbyCat() throws GameActionException {
-        RobotInfo[] cats = rc.senseNearbyRobots(rc.getType().getVisionRadiusSquared(), Team.NEUTRAL);
-        if (cats.length == 0) return false;
-
-        MapLocation catLoc = cats[0].getLocation();
-        int d2 = rc.getLocation().distanceSquaredTo(catLoc);
-
-        // If cat is close-ish, run away
-        if (d2 <= 25) {
-            Direction away = catLoc.directionTo(rc.getLocation());
-            MapLocation next = rc.getLocation().add(away);
-
-            if (rc.canRemoveDirt(next)) {
-                rc.removeDirt(next);
-                return true;
-            }
-            if (rc.canMove(away)) {
-                rc.move(away);
-                return true;
-            }
-        }
-        return false;
+    private boolean secondKingBuilt() throws GameActionException {
+        return (rc.readSharedArray(SA_FLAGS) & FLAG_SECOND_KING_BUILT) != 0;
     }
 
-    private void stepToward(MapLocation target) throws GameActionException {
-        Direction dir = rc.getLocation().directionTo(target);
-        MapLocation next = rc.getLocation().add(dir);
-
-        if (rc.canRemoveDirt(next)) {
-            rc.removeDirt(next);
-            return;
-        }
-        if (rc.canMove(dir)) {
-            rc.move(dir);
-            return;
-        }
-        roam();
+    private void setSecondKingBuilt() throws GameActionException {
+        int flags = rc.readSharedArray(SA_FLAGS);
+        rc.writeSharedArray(SA_FLAGS, flags | FLAG_SECOND_KING_BUILT);
     }
 
-    private void driftAwayFrom(MapLocation king) throws GameActionException {
-        // If already far enough, just roam.
-        int d2 = rc.getLocation().distanceSquaredTo(king);
-        if (d2 >= 100) { // ~10 tiles away
-            roam();
-            return;
-        }
+    // ===== Decision helpers =====
 
-        Direction away = king.directionTo(rc.getLocation());
-        MapLocation next = rc.getLocation().add(away);
-
-        if (rc.canRemoveDirt(next)) {
-            rc.removeDirt(next);
-            return;
-        }
-        if (rc.canMove(away)) {
-            rc.move(away);
-            return;
-        }
-        roam();
+    private boolean shouldRally(int global) {
+        // Only rally when we're close to promo OR in long-game (tuneable)
+        if (global >= RALLY_START) return true;
+        return rc.getRoundNum() >= LONG_GAME_ROUND && global >= (PROMO_COST + 10);
     }
 
-    private void roam() throws GameActionException {
-        // ultra-light random move
-        Direction dir = directions[rand.nextInt(directions.length)];
-        MapLocation next = rc.getLocation().add(dir);
-
-        if (rc.canRemoveDirt(next)) {
-            rc.removeDirt(next);
-            return;
-        }
-        if (rc.canMove(dir)) {
-            rc.move(dir);
-        }
+    private boolean canPromoteNow(int global) {
+        // Simple safe gate: do not spend the last cheese and kill the kings.
+        return global >= (PROMO_COST + RESERVE) && rc.isActionReady();
     }
 }

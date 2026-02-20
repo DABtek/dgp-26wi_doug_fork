@@ -22,6 +22,15 @@ public class CheeseFinder extends BabyRat {
     }
 
     public void doAction() throws GameActionException {
+       updateKingLocFromShared();
+
+        if (tryTransferToAnyNearbyKing()) {
+            currentState = State.FIND_CHEESE;
+            pf.reset();
+            lastPathTarget = null;
+            rc.setIndicatorString("TRANSFER OK -> back to work");
+            return;
+        }
         //updateKingLocFromShared
         int kx = rc.readSharedArray(1);
         int ky = rc.readSharedArray(2);
@@ -96,9 +105,15 @@ public class CheeseFinder extends BabyRat {
     }
 
     public void runReturnToKing() throws GameActionException {
-        MapLocation here = rc.getLocation();
-        Direction toKing = here.directionTo(kingLoc);
-        int rawCheese = rc.getRawCheese();
+    MapLocation here = rc.getLocation();
+
+    if (kingLoc == null) {
+        currentState = State.FIND_CHEESE;
+        return;
+    }
+
+    Direction toKing = here.directionTo(kingLoc);
+    int rawCheese = rc.getRawCheese();
 
         if (kingLoc == null) {
             //no beacon yet, return to FIND_CHEESE

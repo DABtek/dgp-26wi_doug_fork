@@ -29,17 +29,31 @@ public abstract class BabyRat extends RobotSubPlayer {
 
 
     public static BabyRat createToggle(RobotController rc) throws GameActionException {
-        int numRats = rc.readSharedArray(0);
-        if ((rc.getID() % 10) == 0) {
-        return new Kamikaze(rc);
-        } else if ((rc.getID() % 6) == 0) {
-        return new KingBuilder(rc);
-        } else if (rc.getID() % 3 == 0) {
-            return new CheeseFinder(rc);
-        } else {
-            return new Attacker(rc);
-        }
+    int round = rc.getRoundNum();
+    int bucket = Math.floorMod(rc.getID(), 20); // 0..19
+
+    if (round >= 1300) {
+        // LONG GAME:
+        // 0-1  (10%) KingBuilder
+        // 2-7  (30%) Kamikaze
+        // 8-10 (15%) CatAttacker
+        // 11-19 (45%) CheeseFinder
+        if (bucket <= 1) return new KingBuilder(rc);
+        if (bucket <= 8) return new Kamikaze(rc);
+        if (bucket <= 10) return new CatAttacker(rc);
+        return new CheeseFinder(rc);
     }
+
+    // NORMAL GAME:
+    // 0-1  (10%) KingBuilder
+    // 2-4  (15%) Attacker
+    // 5-8  (20%) Kamikaze
+    // 9-19 (55%) CheeseFinder
+    if (bucket <= 1) return new KingBuilder(rc);
+    if (bucket <= 4) return new Attacker(rc);
+    if (bucket <= 8) return new Kamikaze(rc);
+    return new CheeseFinder(rc);
+}
 
     public static int getSqueak(SqueakType type, int value) {
         switch (type) {
@@ -65,7 +79,26 @@ public abstract class BabyRat extends RobotSubPlayer {
         return rawSqueak % 4096;
     }
 
+    
+
     public abstract void doAction() throws GameActionException;
+
+    public boolean tryTransferToAnyNearbyKing() throws GameActionException {
+    int raw = rc.getRawCheese();
+    if (raw <= 0) return false;
+
+    RobotInfo[] allies = rc.senseNearbyRobots(rc.getType().getVisionRadiusSquared(), rc.getTeam());
+    for (RobotInfo r : allies) {
+        if (r.getType().isRatKingType()) {
+            MapLocation k = r.getLocation();
+            if (rc.canTransferCheese(k, raw)) {
+                rc.transferCheese(k, raw);
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 }
 
