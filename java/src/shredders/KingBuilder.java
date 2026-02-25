@@ -17,16 +17,16 @@ public class KingBuilder extends BabyRat {
     private static final int FLAG_SECOND_KING_BUILT = 1 << 0;
 
     // ===== Promotion / Rally Knobs =====
-    private static final int PROMO_COST = 50;
+    private static final int PROMO_COST = 60;
 
     // Start drifting back toward king before PROMO_COST so we can form the 7-pack
     private static final int RALLY_START = 45;
 
     // Builders should NOT all pile onto the same exact squares; use a slightly larger “near king” zone
-    private static final int RALLY_RADIUS2 = 20; // ~4-5 tiles
+    private static final int RALLY_RADIUS2 = 30; // ~4-5 tiles
 
     // When we're very close, hold to help satisfy 3x3 packing
-    private static final int HOLD_RADIUS2 = 5;   // inside-ish of 3x3 region
+    private static final int HOLD_RADIUS2 = 4;   // inside-ish of 3x3 region
 
     // Reserve to avoid draining kings to death
     private static final int RESERVE = 60;
@@ -95,7 +95,7 @@ public class KingBuilder extends BabyRat {
             // use tiny deterministic sidestep when close
             if (d2 <= RALLY_RADIUS2) {
                 // sidestep/jitter to spread in the king zone
-                jitter();
+                //jitter();
                 rc.setIndicatorString("KINGBUILDER spread");
                 return;
             }
