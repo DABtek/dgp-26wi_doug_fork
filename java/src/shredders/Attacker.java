@@ -19,11 +19,14 @@ public class Attacker extends BabyRat {
                 Direction toEnemy = rc.getLocation().directionTo(enemyLoc);              
                 if (rc.canTurn(toEnemy)) {
                     rc.turn(toEnemy);
-                    break;
+                    break; 
                 }
-            }
-
+            } 
+            if (enemyLoc != null && rc.canAttack(enemyLoc)) {
+                rc.attack(enemyLoc);
+                rc.setIndicatorString("Attacking!");
         }
+    }
 
         MapLocation nextLoc = rc.adjacentLocation(rc.getDirection());
         if (rc.canRemoveDirt(nextLoc)) {
@@ -52,7 +55,5 @@ public class Attacker extends BabyRat {
             rc.setIndicatorString("Victory or death!");
         }
 
-    }
-
-    
+    }    
 }

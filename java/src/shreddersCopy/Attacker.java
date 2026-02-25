@@ -24,6 +24,7 @@ public class Attacker extends BabyRat {
             } 
             if (enemyLoc != null && rc.canAttack(enemyLoc)) {
                 rc.attack(enemyLoc);
+                rc.setIndicatorString("Attacking!");
         }
     }
 
