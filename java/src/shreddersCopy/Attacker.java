@@ -9,7 +9,7 @@ public class Attacker extends BabyRat {
     }
 
     public void doAction() throws GameActionException {
-        // search for cheese
+        // search for enemies
         RobotInfo[] nearbyInfos = rc.senseNearbyRobots();
 
         MapLocation enemyLoc = null;
@@ -21,12 +21,11 @@ public class Attacker extends BabyRat {
                     rc.turn(toEnemy);
                     break; 
                 }
-            } 
+            }
             if (enemyLoc != null && rc.canAttack(enemyLoc)) {
                 rc.attack(enemyLoc);
                 rc.setIndicatorString("Attacking!");
         }
-    }
 
         MapLocation nextLoc = rc.adjacentLocation(rc.getDirection());
         if (rc.canRemoveDirt(nextLoc)) {
@@ -54,6 +53,6 @@ public class Attacker extends BabyRat {
             rc.attack(enemyLoc);
             rc.setIndicatorString("Victory or death!");
         }
-
     }    
+}
 }
