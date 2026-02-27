@@ -42,15 +42,15 @@ public class Kamikaze extends BabyRat {
             }
 
             // Deadlock breaker
-            //jitter();
-            //rc.setIndicatorString("KAMI jitter->CAT");
-            //return;
+            jitter();
+            rc.setIndicatorString("KAMI jitter->CAT");
+            return;
         }
 
-        // 2) No cat in sight: roam aggressively (toward map center + jitter)
-       // MapLocation center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
-        //stepToward(center);
-        //rc.setIndicatorString("KAMI roam");
+        //2) No cat in sight: roam aggressively (toward map center + jitter)
+        MapLocation center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
+        stepToward(center);
+        rc.setIndicatorString("KAMI roam");
     }
 
     private RobotInfo nearest(RobotInfo[] arr) {

@@ -14,12 +14,12 @@ public class RatKing extends RobotSubPlayer {
 
     // Banking window: hold cheese so promotion can happen (when KingBuilder is enabled)
     private static final int BANK_START = 50;
-    private static final int BANK_STOP  = 60;
+    private static final int BANK_STOP  = 45;
 
     // Spawn brakes (prevents runaway baby spam)
     private static final int MAX_SPAWNS_BEFORE_2K = 30; // lifetime cap, BUT we allow recovery when cost is low
     private static final int LOCAL_BABY_CAP = 20;       // congestion cap near the king
-    private static final int COST_CEILING = 60;         // stop spawning once cost is too high
+    private static final int COST_CEILING = 100;         // stop spawning once cost is too high
 
     // Reserves: keeps kings alive late game
     private static final int RESERVE_1K = 40;
@@ -34,7 +34,7 @@ public class RatKing extends RobotSubPlayer {
 
     // Long-game spawn profile (tune these)
     private static final int LG_LOCAL_BABY_CAP = 25;
-    private static final int LG_COST_CEILING   = 70;
+    private static final int LG_COST_CEILING   = 100;
     private static final int LG_RESERVE_1K     = 250;  // keep enough bank so king(s) don't bleed HP
     private static final int LG_MIN_BANK_TO_SPAWN = 300; // if we have plenty of cheese, keep fielding units
 

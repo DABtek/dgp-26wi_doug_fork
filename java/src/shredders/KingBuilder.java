@@ -17,7 +17,7 @@ public class KingBuilder extends BabyRat {
     private static final int FLAG_SECOND_KING_BUILT = 1 << 0;
 
     // ===== Promotion / Rally Knobs =====
-    private static final int PROMO_COST = 60;
+    private static final int PROMO_COST = 50;
 
     // Start drifting back toward king before PROMO_COST so we can form the 7-pack
     private static final int RALLY_START = 45;
@@ -152,9 +152,9 @@ public class KingBuilder extends BabyRat {
         }
 
         // Otherwise roam (center-biased, cheap)
-        MapLocation center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
-        Direction toCenter = rc.getLocation().directionTo(center);
-        tryTurnMoveOrDig(toCenter);
+        //MapLocation center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
+        //Direction toCenter = rc.getLocation().directionTo(center);
+        //tryTurnMoveOrDig(toCenter);
         jitter();
     }
 
