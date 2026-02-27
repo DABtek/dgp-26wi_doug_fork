@@ -80,7 +80,8 @@ public class PathFinding {
                     return;
                 }
                 for (Direction digDir : Direction.values()) {
-                if (digDir == Direction.CENTER) continue;
+                if (digDir == Direction.CENTER) 
+                    continue;
                 MapLocation adj = here.add(digDir);
                 if (rc.canRemoveDirt(adj)) {
                     rc.removeDirt(adj);

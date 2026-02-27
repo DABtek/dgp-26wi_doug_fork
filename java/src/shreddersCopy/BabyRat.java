@@ -49,7 +49,7 @@ public abstract class BabyRat extends RobotSubPlayer {
     // 2-4  (15%) Attacker
     // 5-8  (20%) Kamikaze
     // 9-19 (55%) CheeseFinder
-    if (bucket <= 1) return new KingBuilder(rc);
+    //if (bucket <= 1) return new KingBuilder(rc);
     if (bucket <= 5) return new Attacker(rc);
     //if (bucket <= 8) return new Kamikaze(rc);
     return new CheeseFinder(rc);
