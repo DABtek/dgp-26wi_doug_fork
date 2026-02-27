@@ -10,37 +10,41 @@ public class Attacker extends BabyRat {
 
     public void doAction() throws GameActionException {
         // search for attackers
-        RobotInfo[] nearbyInfos = rc.senseNearbyRobots();
+    RobotInfo[] nearbyInfos = rc.senseNearbyRobots();
 
-        MapLocation enemyLoc = null;
-        for (RobotInfo info : nearbyInfos) {
-            if (info.getTeam() != rc.getTeam() && (info.getType().isCatType() || info.getType().isRatKingType())) {
-                enemyLoc = info.getLocation();  
-                    break; 
-                }
-            } 
-            if (enemyLoc != null) {
-            Direction toEnemy = rc.getLocation().directionTo(enemyLoc);              
-            if (rc.canTurn(toEnemy)) 
-                rc.turn(toEnemy);
+    MapLocation kingLocEnemy = null;
+    MapLocation catLocEnemy = null;
+
+    for (RobotInfo info : nearbyInfos) {
+        if (info.getTeam() == rc.getTeam()) continue;
+
+        if (info.getType().isRatKingType()) {
+            kingLocEnemy = info.getLocation();
+            break; 
+        }
+
+        if (catLocEnemy == null && info.getType().isCatType()) {
+            catLocEnemy = info.getLocation();
+        }
+    }
+
+        MapLocation enemyLoc = (kingLocEnemy != null) ? kingLocEnemy :catLocEnemy;
             
-            if (enemyLoc != null && rc.canAttack(enemyLoc)) {
+        if (enemyLoc != null) {
+            Direction toEnemy = rc.getLocation().directionTo(enemyLoc);
+
+            if (rc.canTurn(toEnemy)) rc.turn(toEnemy);
+
+            if (rc.canAttack(enemyLoc)) {
                 rc.attack(enemyLoc);
                 rc.setIndicatorString("Attacking!");
                 return;
-        }
-    }
-        MapLocation nextLoc = rc.adjacentLocation(rc.getDirection());
-        if (rc.canRemoveDirt(nextLoc)) {
-            rc.removeDirt(nextLoc);
-            return;
-        }
-        if (enemyLoc != null) {  
-        Direction toEnemy = rc.getLocation().directionTo(enemyLoc);     
-        if (rc.canMove(toEnemy)) {
-            rc.move(toEnemy);
-            rc.setIndicatorString("Finding enemyLoc.");
-            return;
+            }
+
+            if (rc.canMove(toEnemy)) {
+                rc.move(toEnemy);
+                rc.setIndicatorString("Finding enemyLoc.");
+                return;
         } else {
             Direction left = toEnemy.rotateLeft();
             Direction right = toEnemy.rotateRight();
@@ -54,15 +58,19 @@ public class Attacker extends BabyRat {
             }
         }
     }
-
-        if (rc.canMoveForward()) {
-            rc.moveForward();
+        MapLocation nextLoc = rc.adjacentLocation(rc.getDirection());
+        if (rc.canRemoveDirt(nextLoc)) {
+            rc.removeDirt(nextLoc);
+            return;
+        }
+            if (rc.canMoveForward()) {
+                rc.moveForward();
          } else {
                 d = directions[rand.nextInt(directions.length)];
-                if (rc.canTurn(d)) {
+                if (rc.canTurn(d)) 
                     rc. turn(d);
                 }
             }
         }
-    }  
+    
 
