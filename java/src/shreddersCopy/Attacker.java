@@ -14,12 +14,12 @@ public class Attacker extends BabyRat {
 
         MapLocation enemyLoc = null;
         for (RobotInfo info : nearbyInfos) {
-            if (info.getTeam() != rc.getTeam() && (info.getType().isCatType() || info.getType().isRatKingType())) {
+            if (info.getTeam() != rc.getTeam() 
+                && (info.getType().isCatType() || info.getType().isRatKingType())) {
                 enemyLoc = info.getLocation();  
                 Direction toEnemy = rc.getLocation().directionTo(enemyLoc);              
                 if (rc.canTurn(toEnemy)) {
                     rc.turn(toEnemy);
-                    break; 
                 }
             }
             if (enemyLoc != null && rc.canAttack(enemyLoc)) {
