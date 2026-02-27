@@ -40,13 +40,16 @@ public class Attacker extends BabyRat {
         if (rc.canMove(toEnemy)) {
             rc.move(toEnemy);
             rc.setIndicatorString("Finding enemyLoc.");
+            return;
         } else {
-            Direction left = rc.getDirection().rotateLeft();
-            Direction right = rc.getDirection().rotateRight();
-            if (rc.canMove(right)) {
-                rc.move(right);
-            } else if (rc.canMove(left)) {
+            Direction left = toEnemy.rotateLeft();
+            Direction right = toEnemy.rotateRight();
+            if (rc.canMove(left)) {
                 rc.move(left);
+                return; 
+            }
+            if (rc.canMove(right))    
+                rc.move(right);
                 return;
             }
         }
@@ -60,4 +63,4 @@ public class Attacker extends BabyRat {
                 }
             }
         }    
-    }
+
