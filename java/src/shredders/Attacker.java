@@ -21,9 +21,9 @@ public class Attacker extends BabyRat {
             } 
             if (enemyLoc != null) {
             Direction toEnemy = rc.getLocation().directionTo(enemyLoc);              
-            if (rc.canTurn(toEnemy)) {
+            if (rc.canTurn(toEnemy)) 
                 rc.turn(toEnemy);
-            }
+            
             if (enemyLoc != null && rc.canAttack(enemyLoc)) {
                 rc.attack(enemyLoc);
                 rc.setIndicatorString("Attacking!");
