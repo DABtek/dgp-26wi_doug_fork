@@ -48,19 +48,21 @@ public class Attacker extends BabyRat {
                 rc.move(left);
                 return; 
             }
-            if (rc.canMove(right))    
+            if (rc.canMove(right))  {  
                 rc.move(right);
                 return;
             }
         }
+    }
 
         if (rc.canMoveForward()) {
             rc.moveForward();
          } else {
-                d = directions[rand.nextInt(directions.length - 1)];
-                if (rc.canTurn(d)) 
+                d = directions[rand.nextInt(directions.length)];
+                if (rc.canTurn(d)) {
                     rc. turn(d);
                 }
             }
-        }    
+        }
+    }  
 
