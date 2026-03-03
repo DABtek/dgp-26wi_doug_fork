@@ -10,71 +10,49 @@ public class Attacker extends BabyRat {
 
     public void doAction() throws GameActionException {
         // search for attackers
-    RobotInfo[] nearbyInfos = rc.senseNearbyRobots();
+        RobotInfo[] nearbyInfos = rc.senseNearbyRobots();
 
-    MapLocation kingLocEnemy = null;
-    MapLocation catLocEnemy = null;
-
-    for (RobotInfo info : nearbyInfos) {
-        if (info.getTeam() == rc.getTeam()) continue;
-
-        if (info.getType().isRatKingType()) {
-            kingLocEnemy = info.getLocation();
-            break; 
+        MapLocation enemyLoc = null;
+        for (RobotInfo info : nearbyInfos) {
+            if (info.getTeam() != rc.getTeam() && (info.getType().isCatType() || info.getType().isRatKingType())) {
+                enemyLoc = info.getLocation();  
+                    break; 
+                }
+            } 
+            if (enemyLoc != null) { 
+                if (rc.canAttack(enemyLoc)) {
+                rc.attack(enemyLoc);
+                rc.setIndicatorString("Attacking!");
+                return;
         }
+            Direction toEnemy = rc.getLocation().directionTo(enemyLoc);
 
-        if (catLocEnemy == null && info.getType().isCatType()) {
-            catLocEnemy = info.getLocation(); 
-            }
-        }
-
-        MapLocation enemyLoc = (kingLocEnemy != null) ? kingLocEnemy :catLocEnemy;
-            
-        if (enemyLoc == null) {
-            MapLocation nextLoc = rc.adjacentLocation(rc.getDirection());
-
-            if (rc.canRemoveDirt(nextLoc)) {
-                rc.removeDirt(nextLoc);
+            if (rc.canMove(toEnemy)) {
+                rc.move(toEnemy);
+                rc.setIndicatorString("Moving to enemy");
                 return;
             }
 
-            if (rc.canMoveForward()) {
-                rc.moveForward();;
-                rc.setIndicatorString("Finding enemyLoc.");
-            }
-                return;
-        }
-
-        if (rc.canAttack(enemyLoc)) {
-            rc.attack(enemyLoc);
-            rc.setIndicatorString("Attacking!");
-            return;
-        }
-
-        Direction toEnemy = rc.getLocation().directionTo(enemyLoc);
-
-        if (rc.canTurn(toEnemy)) {
+        if (rc.getDirection() != toEnemy && rc.canTurn(toEnemy)) {
             rc.turn(toEnemy);
+            rc.setIndicatorString("turning");
+            return;
+        }
+    } 
+
+        MapLocation nextLoc = rc.adjacentLocation(rc.getDirection());
+        if (rc.canRemoveDirt(nextLoc)) {
+            rc.removeDirt(nextLoc);
             return;
         }
 
-        if (rc.canMove(toEnemy)) {
-            rc.move(toEnemy);
-            rc.setIndicatorString("Looking for enemyLoc");
+        if (rc.canMoveForward()) {
+            rc.moveForward();
             return;
         }
 
-        Direction left = toEnemy.rotateLeft();
-        Direction right = toEnemy.rotateRight();
-        if (rc.canMove(left)) {
-            rc.move(left);
-            return;
-        }
-        if (rc.canMove(right)) {
-            rc.move(right);
-            return;
-        }
+        Direction d = directions[rand.nextInt(directions.length)];
+        if (rc.canTurn(d)) rc.turn(d);
     }
 }
     
-
