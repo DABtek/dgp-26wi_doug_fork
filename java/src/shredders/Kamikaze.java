@@ -4,6 +4,18 @@ import battlecode.common.*;
 
 public class Kamikaze extends BabyRat {
 
+    // ===== Knobs (Kamikaze) =====
+    // Trap frequency: lower = MORE traps
+    private static final int TRAP_GATE_NORMAL = 11;
+    private static final int TRAP_GATE_LONG   = 5;
+
+    // Only trap when cat is within this distance window
+    private static final int TRAP_MIN_D2 = 5;   // avoid wasting traps when cat is on top of us
+    private static final int TRAP_MAX_D2 = 40;  // don’t trap for super-far cats
+
+    // Long game threshold
+    private static final int LONG_GAME_ROUND = 1300;
+
     public Kamikaze(RobotController rc) {
         super(rc);
     }
@@ -11,12 +23,15 @@ public class Kamikaze extends BabyRat {
     @Override
     public void doAction() throws GameActionException {
 
+        // Always refresh kingLoc if available (cheap and prevents “no transfer” issues)
+        updateKingLocFromShared();
+
         // 0) If we can attack adjacent, do it first.
         for (Direction dir : directions) {
             MapLocation adj = rc.getLocation().add(dir);
             if (rc.canAttack(adj)) {
                 rc.attack(adj);
-                rc.setIndicatorString("KAMI attack");
+                rc.setIndicatorString("KAMI: attack");
                 return;
             }
         }
@@ -27,56 +42,54 @@ public class Kamikaze extends BabyRat {
             RobotInfo target = nearest(cats);
             MapLocation t = target.getLocation();
             Direction toT = rc.getLocation().directionTo(t);
-            MapLocation next = rc.getLocation().add(toT);
+            MapLocation step = rc.getLocation().add(toT);
 
-                        // 1.5) Controlled CAT TRAP placement (low frequency, only when it makes sense)
-            // Only attempt if cat is not right on top of us (avoid wasting on panic turns)
+            // 1.1) Controlled CAT TRAP placement (rate-limited, “plausible only”)
             int d2 = rc.getLocation().distanceSquaredTo(t);
-            if (d2 >= 5 && d2 <= 36) { // ~2 to 6 tiles away
-                int gate = (rc.getRoundNum() + rc.getID()) % 11; // knob: lower = more traps
-                if (gate == 0) {
-                    MapLocation step = rc.getLocation().add(toT);
-                    MapLocation left = rc.getLocation().add(toT.rotateLeft());
-                    MapLocation right = rc.getLocation().add(toT.rotateRight());
+            int gateMod = (rc.getRoundNum() >= LONG_GAME_ROUND) ? TRAP_GATE_LONG : TRAP_GATE_NORMAL;
+            boolean gate = ((rc.getRoundNum() + rc.getID()) % gateMod) == 0;
 
-                    if (rc.canPlaceCatTrap(step)) {
-                        rc.placeCatTrap(step);
-                        rc.setIndicatorString("KAMI trap->CAT");
-                        return;
-                    } else if (rc.canPlaceCatTrap(left)) {
-                        rc.placeCatTrap(left);
-                        rc.setIndicatorString("KAMI trapL->CAT");
-                        return;
-                    } else if (rc.canPlaceCatTrap(right)) {
-                        rc.placeCatTrap(right);
-                        rc.setIndicatorString("KAMI trapR->CAT");
-                        return;
-                    }
+            if (gate && d2 >= TRAP_MIN_D2 && d2 <= TRAP_MAX_D2 && rc.isActionReady()) {
+                MapLocation left  = rc.getLocation().add(toT.rotateLeft());
+                MapLocation right = rc.getLocation().add(toT.rotateRight());
+
+                if (rc.canPlaceCatTrap(step)) {
+                    rc.placeCatTrap(step);
+                    rc.setIndicatorString("KAMI: trap step");
+                    return;
+                } else if (rc.canPlaceCatTrap(left)) {
+                    rc.placeCatTrap(left);
+                    rc.setIndicatorString("KAMI: trap left");
+                    return;
+                } else if (rc.canPlaceCatTrap(right)) {
+                    rc.placeCatTrap(right);
+                    rc.setIndicatorString("KAMI: trap right");
+                    return;
                 }
             }
 
-            // Close distance: dig if blocked, otherwise move
-            if (rc.canRemoveDirt(next)) {
-                rc.removeDirt(next);
-                rc.setIndicatorString("KAMI dig->CAT");
+            // 1.2) Close distance: dig if blocked, otherwise move
+            if (rc.canRemoveDirt(step)) {
+                rc.removeDirt(step);
+                rc.setIndicatorString("KAMI: dig->cat");
                 return;
             }
             if (rc.canMove(toT)) {
                 rc.move(toT);
-                rc.setIndicatorString("KAMI rush->CAT");
+                rc.setIndicatorString("KAMI: rush->cat");
                 return;
             }
 
-            // Deadlock breaker
+            // 1.3) Deadlock breaker
             jitter();
-            rc.setIndicatorString("KAMI jitter->CAT");
+            rc.setIndicatorString("KAMI: jitter->cat");
             return;
         }
 
-        //2) No cat in sight: roam aggressively (toward map center + jitter)
+        // 2) No cat in sight: roam aggressively (toward map center + jitter)
         MapLocation center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
         stepToward(center);
-        rc.setIndicatorString("KAMI roam");
+        rc.setIndicatorString("KAMI: roam");
     }
 
     private RobotInfo nearest(RobotInfo[] arr) {
