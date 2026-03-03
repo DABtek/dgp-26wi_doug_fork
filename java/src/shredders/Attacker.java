@@ -24,53 +24,57 @@ public class Attacker extends BabyRat {
         }
 
         if (catLocEnemy == null && info.getType().isCatType()) {
-            catLocEnemy = info.getLocation();
+            catLocEnemy = info.getLocation(); 
+            }
         }
-    }
 
         MapLocation enemyLoc = (kingLocEnemy != null) ? kingLocEnemy :catLocEnemy;
             
-        if (enemyLoc != null) {
-            Direction toEnemy = rc.getLocation().directionTo(enemyLoc);
+        if (enemyLoc == null) {
+            MapLocation nextLoc = rc.adjacentLocation(rc.getDirection());
 
-            if (rc.canTurn(toEnemy)) rc.turn(toEnemy);
-
-            if (rc.canAttack(enemyLoc)) {
-                rc.attack(enemyLoc);
-                rc.setIndicatorString("Attacking!");
+            if (rc.canRemoveDirt(nextLoc)) {
+                rc.removeDirt(nextLoc);
                 return;
             }
 
-            if (rc.canMove(toEnemy)) {
-                rc.move(toEnemy);
+            if (rc.canMoveForward()) {
+                rc.moveForward();;
                 rc.setIndicatorString("Finding enemyLoc.");
-                return;
-        } else {
-            Direction left = toEnemy.rotateLeft();
-            Direction right = toEnemy.rotateRight();
-            if (rc.canMove(left)) {
-                rc.move(left);
-                return; 
             }
-            if (rc.canMove(right))  {  
-                rc.move(right);
                 return;
-            }
         }
-    }
-        MapLocation nextLoc = rc.adjacentLocation(rc.getDirection());
-        if (rc.canRemoveDirt(nextLoc)) {
-            rc.removeDirt(nextLoc);
+
+        if (rc.canAttack(enemyLoc)) {
+            rc.attack(enemyLoc);
+            rc.setIndicatorString("Attacking!");
             return;
         }
-            if (rc.canMoveForward()) {
-                rc.moveForward();
-         } else {
-                d = directions[rand.nextInt(directions.length)];
-                if (rc.canTurn(d)) 
-                    rc. turn(d);
-                }
-            }
+
+        Direction toEnemy = rc.getLocation().directionTo(enemyLoc);
+
+        if (rc.canTurn(toEnemy)) {
+            rc.turn(toEnemy);
+            return;
         }
+
+        if (rc.canMove(toEnemy)) {
+            rc.move(toEnemy);
+            rc.setIndicatorString("Looking for enemyLoc");
+            return;
+        }
+
+        Direction left = toEnemy.rotateLeft();
+        Direction right = toEnemy.rotateRight();
+        if (rc.canMove(left)) {
+            rc.move(left);
+            return;
+        }
+        if (rc.canMove(right)) {
+            rc.move(right);
+            return;
+        }
+    }
+}
     
 
