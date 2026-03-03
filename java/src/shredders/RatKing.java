@@ -190,4 +190,31 @@ public class RatKing extends RobotSubPlayer {
         }
         return false;
     }
+        // Ring-2 around the king center (king occupies 3x3). This ring is the 5x5 border.
+    // Using a fixed candidate list keeps bytecode low and behavior consistent.
+    private MapLocation[] ring2SpawnCandidates(MapLocation here) {
+        return new MapLocation[] {
+                // top row (y + 2)
+                new MapLocation(here.x - 2, here.y + 2),
+                new MapLocation(here.x - 1, here.y + 2),
+                new MapLocation(here.x,     here.y + 2),
+                new MapLocation(here.x + 1, here.y + 2),
+                new MapLocation(here.x + 2, here.y + 2),
+
+                // middle sides (y + 1, y, y - 1) at x +/- 2
+                new MapLocation(here.x - 2, here.y + 1),
+                new MapLocation(here.x + 2, here.y + 1),
+                new MapLocation(here.x - 2, here.y),
+                new MapLocation(here.x + 2, here.y),
+                new MapLocation(here.x - 2, here.y - 1),
+                new MapLocation(here.x + 2, here.y - 1),
+
+                // bottom row (y - 2)
+                new MapLocation(here.x - 2, here.y - 2),
+                new MapLocation(here.x - 1, here.y - 2),
+                new MapLocation(here.x,     here.y - 2),
+                new MapLocation(here.x + 1, here.y - 2),
+                new MapLocation(here.x + 2, here.y - 2),
+        };
+    }
 }

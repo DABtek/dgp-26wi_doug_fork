@@ -29,6 +29,32 @@ public class Kamikaze extends BabyRat {
             Direction toT = rc.getLocation().directionTo(t);
             MapLocation next = rc.getLocation().add(toT);
 
+                        // 1.5) Controlled CAT TRAP placement (low frequency, only when it makes sense)
+            // Only attempt if cat is not right on top of us (avoid wasting on panic turns)
+            int d2 = rc.getLocation().distanceSquaredTo(t);
+            if (d2 >= 5 && d2 <= 36) { // ~2 to 6 tiles away
+                int gate = (rc.getRoundNum() + rc.getID()) % 11; // knob: lower = more traps
+                if (gate == 0) {
+                    MapLocation step = rc.getLocation().add(toT);
+                    MapLocation left = rc.getLocation().add(toT.rotateLeft());
+                    MapLocation right = rc.getLocation().add(toT.rotateRight());
+
+                    if (rc.canPlaceCatTrap(step)) {
+                        rc.placeCatTrap(step);
+                        rc.setIndicatorString("KAMI trap->CAT");
+                        return;
+                    } else if (rc.canPlaceCatTrap(left)) {
+                        rc.placeCatTrap(left);
+                        rc.setIndicatorString("KAMI trapL->CAT");
+                        return;
+                    } else if (rc.canPlaceCatTrap(right)) {
+                        rc.placeCatTrap(right);
+                        rc.setIndicatorString("KAMI trapR->CAT");
+                        return;
+                    }
+                }
+            }
+
             // Close distance: dig if blocked, otherwise move
             if (rc.canRemoveDirt(next)) {
                 rc.removeDirt(next);
