@@ -2,7 +2,7 @@ package shredders;
 
 import battlecode.common.*;
 
-public class bugnav {
+public class BugNav {
 
     enum Mode {
         TRACING_FARTHER,
@@ -27,7 +27,7 @@ public class bugnav {
         MapInfo[] neighbors;
 
         // We follow an object counter-clocking
-        public bugnav(MapLocation dest, RobotController rc) throws GameActionException {
+        public BugNav(MapLocation dest, RobotController rc) throws GameActionException {
             mode = Mode.TRACING_FARTHER;
             this.dest = dest;
             // destDirection =
