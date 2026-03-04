@@ -55,13 +55,6 @@ public class bugnav {
             return RobotSubPlayer.directions[rightIndex];
         }
 
-        /*
-         * Populate neighbors in all 8 directions from nearby map info's
-         * And turn our direction to one that traces the current obstacle in clockwise direction
-         * (one where our right location may be free, and we should turn right, or one where our
-         * forward may be blocked, and we should turn left until the way forward is free again.
-         * @return new direction to turn while keeping wall to our right
-         */
         public Direction senseNeighborsForNewTurnDirection(MapInfo[] infos, MapLocation here, Direction forward) {
 
             // Fill in the neighboring tiles that we can sense
