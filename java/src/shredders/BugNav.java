@@ -13,24 +13,18 @@ public class BugNav {
     Mode mode;
     MapLocation dest;
 
-    // Our current direction
     Direction d;
 
-    // Our original direction to our destination
-    // if our leftward direction ever points here, we should go straight
     Direction destDirection;
     Direction scheduledTurn = null;
 
     int previousDistance;
 
-    // Eight adjacent locations
     MapInfo[] neighbors;
 
-    // We follow an object counter-clocking
     public BugNav(MapLocation dest, RobotController rc) throws GameActionException {
         mode = Mode.TRACING_FARTHER;
         this.dest = dest;
-        // destDirection =
         MapLocation here = rc.getLocation();
         d = here.directionTo(dest);
         System.out.println("Started bugnav " + here.toString() + " heading toward " + dest.toString());
@@ -57,7 +51,6 @@ public class BugNav {
 
     public Direction senseNeighborsForNewTurnDirection(MapInfo[] infos, MapLocation here, Direction forward) {
 
-        // Fill in the neighboring tiles that we can sense
         for (MapInfo info : infos) {
             MapLocation infoLoc = info.getMapLocation();
             if (!infoLoc.isAdjacentTo(here)) {
@@ -83,20 +76,11 @@ public class BugNav {
                 d = leftDirection(d);
                 neighbor = neighbors[d.ordinal()];
             } while (!neighbor.isPassable());
-            // If we reach here we finally found a passable neighbor (which could be 180 degrees behind us)
+
             return d;
         }
     }
 
-    /**
-     * Do a step of the bugnav algorithm, returning when to stop doing
-     * bugnav and resume straight line walking toward destination.
-     *
-     * @param rc
-     * @return true if we should end bugnav and walk straight
-     * false if we should keep calling bugnav next time
-     * @throws GameActionException
-     */
     public boolean move(RobotController rc) throws GameActionException {
         if (!rc.canTurn()) {
             return false;
@@ -123,7 +107,6 @@ public class BugNav {
             case Mode.TRACING_FARTHER:
                 MapInfo[] infos = rc.senseNearbyMapInfos(2);
 
-                // // Is tracing now moving us further away from our destination?
                 if (forwardDist < previousDistance) {
                     mode = Mode.TRACING_CLOSER;
                     return false;
