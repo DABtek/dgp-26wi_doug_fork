@@ -76,7 +76,7 @@ public class CheeseFinder extends BabyRat {
     }
 
 
-    public void runFindCheese() throws GameActionException {
+    protected void runFindCheese() throws GameActionException {
         // search for cheese
         MapLocation cheeseLoc = null;
         MapLocation here = rc.getLocation();
@@ -137,7 +137,7 @@ public class CheeseFinder extends BabyRat {
 
     }
 
-    public void runReturnToKing() throws GameActionException {
+    protected void runReturnToKing() throws GameActionException {
 
         if (bugNav != null) {
             boolean result = bugNav.move(rc);

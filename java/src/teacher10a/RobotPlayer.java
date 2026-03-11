@@ -10,10 +10,12 @@ public class RobotPlayer {
 
     public static BabyRat createToggle(RobotController rc) throws GameActionException {
         int numRats = rc.readSharedArray(0);
-        if ((numRats % 2) == 0) {
+        if ((numRats % 3) == 0) {
             return new CheeseFinder(rc);
-        } else {
+        } else if ((numRats % 3) == 1) {
             return new CatAttacker(rc);
+        } else {
+            return new KingMaker(rc);
         }
     }
 

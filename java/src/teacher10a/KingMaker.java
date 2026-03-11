@@ -37,9 +37,11 @@ public class KingMaker extends CheeseFinder {
         }
     }
 
-    protected void runFindingCheese() throws GameActionException {
+    @Override
+    protected void runFindCheese() throws GameActionException {
         if (mineLoc != null) {
             senseBecomingKing();
+            System.out.println("sensing kingmaking for " + kingMakingDest);
         }
         super.runFindCheese();
     }
