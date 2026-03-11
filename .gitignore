@@ -200,3 +200,6 @@ gradle-app.setting
 .classpath
 
 .obsidian/*
+
+java/src/immortal_chariot*
+java/src/shredders*
